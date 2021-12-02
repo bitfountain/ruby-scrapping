@@ -24,8 +24,8 @@ browser.close
 article_cards = parsed_page.css(".ticket-detail-list .ticket-detail-item-inner")
 
 article_cards.each do |card|
-    binding.pry
     puts card
+    # puts card.children.first.children.first.children.first.children.last.children.first.children.text
+    puts card unless card.nil?
 end
-
 
