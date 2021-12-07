@@ -21,7 +21,7 @@ require 'pry';
 # browser_opts = {"script-timeout"=> 30}
 # browser = Watir::Browser.new :chrome, headless: true
 browser = Watir::Browser.new :chrome
-browser.driver.manage.timeouts.implicit_wait  = 30
+# browser.driver.manage.timeouts.implicit_wait  = 30
 
 # browser.add_argument('--ignore-certificate-errors')
 # browser.add_argument('--disable-popup-blocking')

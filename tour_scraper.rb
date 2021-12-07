@@ -11,7 +11,7 @@ File.open("parsed.txt", "w") { |f| f.write "#{parsed_page}" }
 browser.close
 
 available_ticket = 0
-
+sleep(10)
 #Parse searched page to find out available ticket no.
 parsed_page.search('.tbl-list-detail .ticket-detail-type-text-ellipsis').each do |ticket_details|
  # Split the ticket available count
