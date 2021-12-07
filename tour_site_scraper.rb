@@ -12,7 +12,7 @@ driver.navigate.to "https://www.tour.ne.jp/j_air/list/?adult=1&air_type=2&arr_ou
 wait = Selenium::WebDriver::Wait.new(:timeout => 10000)
 
 #Take some time to load the page
-sleep(2)
+sleep(5)
 
 ticket_summary_button = wait.until {
   elements = driver.find_element(:css, "#Act_Airline_Out")
