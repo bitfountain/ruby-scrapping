@@ -38,6 +38,10 @@ total_available_ticket = 0
   total_available_ticket += ticket_count.text.delete("^0-9").to_i
 end
 
-puts "Available ticket companies name = " + ticket_summary.first.text + ", " + ticket_summary.last.text
+puts "Available ticket companies name = "
+!ticket_summary.nil? && ticket_summary.each do |ticket_cmpany|
+  puts ticket_cmpany.text.to_s + ', ' 
+end
+
 puts "Total available ticket found is = " + total_available_ticket.to_s
 
