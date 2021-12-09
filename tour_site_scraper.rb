@@ -21,7 +21,7 @@ begin
   return if ticket_summary_button.nil?
   ticket_summary_button.click
 rescue Exception => e
-  puts 'Trying Again ' + retries.to_s
+  puts 'Trying to fetch data.. ' + retries.to_s
   retries += 1
   sleep(1)     # Wait 1s to load the page properly
   retry if (retries <= MAX_RETRY)
