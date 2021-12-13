@@ -20,6 +20,47 @@ def check_return_tickets_visibility(driver)
   end
 end
 
+def scrap_ticket_details(driver, ticket_details_type)
+  if ticket_details_type == 'in'
+    ticket_lists = driver.find_elements(:css, '#Act_response_in .company-list .company-box')
+  else
+    ticket_lists = driver.find_elements(:css, '#Act_response_out .company-list .company-box')
+  end
+
+  total_ticket_found = 0
+  all_tickets_details_lists = []
+  ticket_lists&.each do |ticket_list|
+    temp_ticket_company_info = {}
+    number_of_ticket_found = 0
+
+    ticket_company_name = ticket_list.find_element(:css, '.airline-name').text
+    number_of_ticket_found = ticket_list.find_element(:css, '.toggle-btn-company').text.delete('^0-9').to_i
+    total_ticket_found += number_of_ticket_found
+    ticket_minimum_price = ticket_list.find_element(:css, '.hdg-sup-price > b').text
+
+    temp_ticket_company_info[:ticket_company_name] = ticket_company_name
+    temp_ticket_company_info[:ticket_minimum_price] = ticket_minimum_price
+    temp_ticket_company_info[:number_of_ticket_found] = number_of_ticket_found
+
+    flight_lists = []
+    ticket_company_lists = ticket_list.find_elements(:css, '.Act_flight_list')
+    ticket_company_lists&.each do |flight|
+      ticket_code  = flight.find_elements(:css, '.ticket-summary-row > span')[1].attribute("innerHTML")
+      ticket_price  = flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-price > label > b')[0].attribute("innerHTML")
+      ticket_seat  = flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-seat')[0].attribute("innerHTML")
+      ticket_changable_status  = flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-date')[0].attribute("innerHTML")
+      ticket_type  = flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-type-text .ticket-detail-type-text-ellipsis')[0].attribute("innerHTML")
+      flight_data = {}
+      flight_data['flight_code'] = ticket_code
+      flight_data['flight_price'] = ticket_price
+      flight_lists.push(flight_data)
+    end
+    temp_ticket_company_info[:flight_lists] = flight_lists
+    all_tickets_details_lists.push(temp_ticket_company_info)
+  end
+  return all_tickets_details_lists, total_ticket_found
+end
+
 ticket_search_date_from = Date.new(2021, 12, 31)
 ticket_search_date_to = Date.new(2022, 01, 31)
 ticket_search_date_from.upto(ticket_search_date_to) do |dt|
@@ -51,57 +92,15 @@ ticket_search_date_from.upto(ticket_search_date_to) do |dt|
 
   check_return_tickets_visibility(driver)
 
-  ticket_lists = driver.find_elements(:css, '#Act_response_in .company-list .company-box')
+  tickets_out_list = scrap_ticket_details(driver, 'out')
+  all_ticket_out_lists = tickets_out_list[0]
+  total_ticket_out_found = tickets_out_list[1]
 
-  ticket_lists.each do |ticket_list|
-     ticket_flight_lists = ticket_list.find_elements(:css, '.Act_flight_list')
-    #  test = ticket_flight_lists.find_elements(:xpath, '//*[@id="Act_response_in"]/div/ul[contains(@class,"ticket-code")]')
+  tickets_in_list = scrap_ticket_details(driver, 'in')
+  all_ticket_in_details = tickets_in_list[0]
+  total_ticket_in_found = tickets_in_list[1]
 
-     ticket_flight_lists.each do |flight|
-        ticket_code  = flight.find_elements(:css, '.ticket-summary-row > span')[1].attribute("innerHTML")
-        puts 'ticket codes are = ' + ticket_code
-        # flight.attribute("innerHTML")
-        # binding.pry 
-     end
-  end
+  puts  "Total tickets found for out is = " + total_ticket_out_found.to_s
+  puts  "Total tickets found for in is = " + total_ticket_in_found.to_s
 
-
-#   binding.pry
-
-  # Scrap Available Tickets Elements
-  ticket_summary = driver.find_elements(:css, '#Act_response_out .airline-name')
-  ticket_available_lists = driver.find_elements(:css, '#Act_response_out .toggle-btn-company')
-
-  # Parse elements to find each companies available ticket and sum
-  total_available_ticket = 0
-  !ticket_available_lists.nil? && ticket_available_lists.each do |ticket_count|
-    total_available_ticket += ticket_count.text.delete('^0-9').to_i
-  end
-
-  # Scrap Returning Tickets Elements
-  ticket_summary_in = driver.find_elements(:css, '#Act_response_in .airline-name')
-  ticket_available_lists_in = driver.find_elements(:css, '#Act_response_in .toggle-btn-company')
-
-  # Parse elements to find each companies returning tickets and sum
-  total_available_ticket_in = 0
-  !ticket_available_lists_in.nil? && ticket_available_lists_in.each do |ticket_count_in|
-    total_available_ticket_in += ticket_count_in.text.delete('^0-9').to_i
-  end
-
-  # Write all tickets search results
-  puts 'Total available ticket OUT found is = ' + total_available_ticket.to_s
-  puts 'Total available ticket IN found is = ' + total_available_ticket_in.to_s
-
-  puts 'Available ticket IN companies name : '
-  puts '------------------------------------'
-  !ticket_summary_in.nil? && ticket_summary_in.each do |ticket_cmpany_in|
-    puts ticket_cmpany_in.text.to_s + ', '
-  end
-
-  puts
-  puts 'Available ticket OUT companies name : '
-  puts '-------------------------------------'
-  !ticket_summary.nil? && ticket_summary.each do |ticket_cmpany|
-    puts ticket_cmpany.text.to_s + ', '
-  end
 end
