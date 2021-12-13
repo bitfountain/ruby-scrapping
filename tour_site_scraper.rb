@@ -59,7 +59,7 @@ ticket_search_date_from.upto(ticket_search_date_to) do |dt|
 
   # Parse elements to find each companies available ticket and sum
   total_available_ticket = 0
-  !ticket_available_lists.nil? && ticket_available_lists.each do |ticket_count|
+  ticket_available_lists&.each do |ticket_count|
     total_available_ticket += ticket_count.text.delete('^0-9').to_i
   end
 
@@ -69,7 +69,7 @@ ticket_search_date_from.upto(ticket_search_date_to) do |dt|
 
   # Parse elements to find each companies returning tickets and sum
   total_available_ticket_in = 0
-  !ticket_available_lists_in.nil? && ticket_available_lists_in.each do |ticket_count_in|
+  ticket_available_lists_in&.each do |ticket_count_in|
     total_available_ticket_in += ticket_count_in.text.delete('^0-9').to_i
   end
 
@@ -79,14 +79,14 @@ ticket_search_date_from.upto(ticket_search_date_to) do |dt|
 
   puts 'Available ticket IN companies name : '
   puts '------------------------------------'
-  !ticket_summary_in.nil? && ticket_summary_in.each do |ticket_cmpany_in|
+  ticket_summary_in&.each do |ticket_cmpany_in|
     puts ticket_cmpany_in.text.to_s + ', '
   end
 
   puts
   puts 'Available ticket OUT companies name : '
   puts '-------------------------------------'
-  !ticket_summary.nil? && ticket_summary.each do |ticket_cmpany|
+  ticket_summary&.each do |ticket_cmpany|
     puts ticket_cmpany.text.to_s + ', '
   end
 end
