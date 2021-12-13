@@ -4,27 +4,49 @@ require 'pry'
 
 MAX_RETRY = 100
 WAIT = Selenium::WebDriver::Wait.new(timeout: 20)
-
+WEB_DRIVER = Selenium::WebDriver.for :firefox
 # options = Selenium::WebDriver::Firefox::Options.new(args: ['-headless'])
 # driver = Selenium::WebDriver.for(:firefox, options: options)
-driver = Selenium::WebDriver.for :firefox
+
 
 puts 'Trying to fetch data from site.....'
 puts '--------------------------------------------------------'
 
-def check_return_tickets_visibility(driver)
+def start_scraping(departure_date_in, departure_date_out)
+  # Generate the search url physically using any date, time and put here, we will make it dynamic later based on requirement
+  WEB_DRIVER.navigate.to 'https://www.tour.ne.jp/j_air/list/?adult=1&arr_in=TYO&arr_out=CTS&change_date_in=0&change_date_out=0&date_in=' + departure_date_in + '&date_out=' + departure_date_out + '&dpt_in=CTS&dpt_out=TYO&time_from_out=0600&time_to_out=0700&time_type_out=0'
+  sleep(1)  # Wait 1s to load the page properly
+  begin
+    retries ||= 0
+    ticket_summary_button_out = nil
+    ticket_summary_button_out = WEB_DRIVER.find_element(:css, '#Act_Airline_Out')
+    ticket_summary_button_in = WEB_DRIVER.find_element(:css, '#Act_Airline_In')
+    return if ticket_summary_button_out.nil? && ticket_summary_button_in.nil?
+    ticket_summary_button_out.click
+    ticket_summary_button_in.click
+  rescue Exception => e
+    puts 'Trying to fetch data.. ' + retries.to_s
+    retries += 1
+    sleep(1)   # Wait 1s to load the page properly
+    retry if (retries <= MAX_RETRY)
+    raise "Could not get ticket website information: Please give necessary information to search"
+  end
+end
+
+def check_return_tickets_visibility
   begin
     # Wait for few seconds until able to find return tickets list
-    WAIT.until { driver.find_element(css: "#Act_response_in .company-list").displayed? }
+    WAIT.until { WEB_DRIVER.find_element(css: "#Act_response_out .company-list").displayed? }
+    WAIT.until { WEB_DRIVER.find_element(css: "#Act_response_in .company-list").displayed? }
   rescue Exception
   end
 end
 
-def scrap_ticket_details(driver, ticket_details_type)
+def scrap_ticket_details(ticket_details_type)
   if ticket_details_type == 'in'
-    ticket_lists = driver.find_elements(:css, '#Act_response_in .company-list .company-box')
+    ticket_lists = WEB_DRIVER.find_elements(:css, '#Act_response_in .company-list .company-box')
   else
-    ticket_lists = driver.find_elements(:css, '#Act_response_out .company-list .company-box')
+    ticket_lists = WEB_DRIVER.find_elements(:css, '#Act_response_out .company-list .company-box')
   end
 
   total_ticket_found = 0
@@ -68,39 +90,17 @@ ticket_search_date_from.upto(ticket_search_date_to) do |dt|
   departure_date_out = dt.to_s.delete("-")
 
   puts "\n\nTickets for this date " + dt.to_s
+  start_scraping(departure_date_in, departure_date_out)
+  check_return_tickets_visibility
 
-  # Generate the search url physically using any date, time and put here, we will make it dynamic later based on requirement
-  driver.navigate.to 'https://www.tour.ne.jp/j_air/list/?adult=1&arr_in=TYO&arr_out=CTS&change_date_in=0&change_date_out=0&date_in=' + departure_date_in + '&date_out=' + departure_date_out + '&dpt_in=CTS&dpt_out=TYO&time_from_out=0600&time_to_out=0700&time_type_out=0'
-  sleep(1)  # Wait 1s to load the page properly
-  begin
-    retries ||= 0
-    ticket_summary_button_out = nil
-    ticket_summary_button_out = driver.find_element(:css, '#Act_Airline_Out')
-    ticket_summary_button_in = driver.find_element(:css, '#Act_Airline_In')
-    return if ticket_summary_button_out.nil? && ticket_summary_button_in.nil?
-    ticket_summary_button_out.click
-    ticket_summary_button_in.click
-
-    WAIT.until { driver.find_element(css: "#Act_response_out .company-list").displayed? }
-  rescue Exception => e
-    puts 'Trying to fetch data.. ' + retries.to_s
-    retries += 1
-    sleep(1)   # Wait 1s to load the page properly
-    retry if (retries <= MAX_RETRY)
-    raise "Could not get ticket website information: Please give necessary information to search"
-  end
-
-  check_return_tickets_visibility(driver)
-
-  tickets_out_list = scrap_ticket_details(driver, 'out')
+  tickets_out_list = scrap_ticket_details('out')
   all_ticket_out_lists = tickets_out_list[0]
   total_ticket_out_found = tickets_out_list[1]
 
-  tickets_in_list = scrap_ticket_details(driver, 'in')
+  tickets_in_list = scrap_ticket_details('in')
   all_ticket_in_details = tickets_in_list[0]
   total_ticket_in_found = tickets_in_list[1]
 
   puts  "Total tickets found for out is = " + total_ticket_out_found.to_s
   puts  "Total tickets found for in is = " + total_ticket_in_found.to_s
-
 end
