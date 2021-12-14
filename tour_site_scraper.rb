@@ -19,8 +19,10 @@ puts '--------------------------------------------------------'
 
 def start_scraping(departure_date_in, departure_date_out)
   # Generate the search url physically using any date, time and put here, we will make it dynamic later based on requirement
-  WEB_DRIVER.navigate.to 'https://www.tour.ne.jp/j_air/list/?adult=1&arr_in=TYO&arr_out=CTS&change_date_in=0&change_date_out=0&date_in=' + departure_date_in + '&date_out=' + departure_date_out + '&dpt_in=CTS&dpt_out=TYO&time_from_out=0600&time_to_out=0700&time_type_out=0'
-  sleep(1)  # Wait 1s to load the page properly
+  WEB_DRIVER.navigate.to "https://www.tour.ne.jp/j_air/list/?adult=1&arr_in=TYO&arr_out=CTS&change_date_in=0&change_date_out=0&" +
+  "date_in=#{departure_date_in}&date_out=#{departure_date_out}&dpt_in=" +
+  "CTS&dpt_out=TYO&time_from_out=0600&time_to_out=0700&time_type_out=0"
+  sleep(1)
   begin
     retries ||= 0
     ticket_summary_button_out = nil
