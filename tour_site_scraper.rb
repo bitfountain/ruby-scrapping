@@ -4,6 +4,7 @@ require 'pry'
 
 MAX_RETRY = 40  # Maximum retry until the serarch page load in seconds
 MAX_CALL = 3  # Maximum recall air ticket site if any ajax error or busy page shown
+
 # Put Ticket Search input dates here
 TICKET_SEARCH_FROM_DATE = Date.new(2021, 12, 31)
 TICKET_SEARCH_TO_DATE = Date.new(2022, 01, 31)
@@ -94,7 +95,6 @@ TICKET_SEARCH_FROM_DATE.upto(TICKET_SEARCH_TO_DATE) do |dt|
     tickets_out_lists = searching_ticket_type('out')
     tickets_in_lists = searching_ticket_type('in')
   rescue Exception
-    puts "retris in check visibility=====" + retries.to_s
     retries += 1
     retry if (retries <= MAX_CALL)
     raise "Could not get ticket website information: Please give necessary information to search"
