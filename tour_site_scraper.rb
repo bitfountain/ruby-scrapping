@@ -2,12 +2,17 @@ require 'rubygems'
 require 'selenium-webdriver'
 require 'pry'
 
-MAX_RETRY = 100
-WAIT = Selenium::WebDriver::Wait.new(timeout: 20)
+MAX_RETRY = 40  # Maximum retry until the serarch page load in seconds
+MAX_CALL = 3  # Maximum recall air ticket site if any ajax error or busy page shown
+# Put Ticket Search input dates here
+TICKET_SEARCH_FROM_DATE = Date.new(2021, 12, 31)
+TICKET_SEARCH_TO_DATE = Date.new(2022, 01, 31)
+
+WAIT = Selenium::WebDriver::Wait.new(timeout: 20) # Maximum wait to find out search results html
 WEB_DRIVER = Selenium::WebDriver.for :firefox
+
 # options = Selenium::WebDriver::Firefox::Options.new(args: ['-headless'])
 # driver = Selenium::WebDriver.for(:firefox, options: options)
-
 
 puts 'Trying to fetch data from site.....'
 puts '--------------------------------------------------------'
@@ -33,73 +38,70 @@ def start_scraping(departure_date_in, departure_date_out)
   end
 end
 
-def check_return_tickets_visibility
-  begin
-    # Wait for few seconds until able to find return tickets list
-    WAIT.until { WEB_DRIVER.find_element(css: "#Act_response_out .company-list").displayed? }
-    WAIT.until { WEB_DRIVER.find_element(css: "#Act_response_in .company-list").displayed? }
-  rescue Exception
-  end
-end
-
-def scrap_ticket_details(ticket_details_type)
+def searching_ticket_type(ticket_details_type)
   if ticket_details_type == 'in'
-    ticket_lists = WEB_DRIVER.find_elements(:css, '#Act_response_in .company-list .company-box')
+    ticket_airlines = WEB_DRIVER.find_elements(:css, '#Act_response_in .company-list .company-box')
   else
-    ticket_lists = WEB_DRIVER.find_elements(:css, '#Act_response_out .company-list .company-box')
+    ticket_airlines = WEB_DRIVER.find_elements(:css, '#Act_response_out .company-list .company-box')
   end
 
   total_ticket_found = 0
   all_tickets_details_lists = []
-  ticket_lists&.each do |ticket_list|
-    temp_ticket_company_info = {}
+  ticket_airlines&.each do |ticket_airline|
+    temp_ticket_airline_info = {}
     number_of_ticket_found = 0
 
-    ticket_company_name = ticket_list.find_element(:css, '.airline-name').text
-    number_of_ticket_found = ticket_list.find_element(:css, '.toggle-btn-company').text.delete('^0-9').to_i
+    ticket_company_name = ticket_airline.find_element(:css, '.airline-name').text
+    number_of_ticket_found = ticket_airline.find_element(:css, '.toggle-btn-company').text.delete('^0-9').to_i
     total_ticket_found += number_of_ticket_found
-    ticket_minimum_price = ticket_list.find_element(:css, '.hdg-sup-price > b').text
+    ticket_minimum_price = ticket_airline.find_element(:css, '.hdg-sup-price > b').text
 
-    temp_ticket_company_info[:ticket_company_name] = ticket_company_name
-    temp_ticket_company_info[:ticket_minimum_price] = ticket_minimum_price
-    temp_ticket_company_info[:number_of_ticket_found] = number_of_ticket_found
+    temp_ticket_airline_info[:ticket_company_name] = ticket_company_name
+    temp_ticket_airline_info[:ticket_minimum_price] = ticket_minimum_price
+    temp_ticket_airline_info[:number_of_ticket_found] = number_of_ticket_found
 
-    flight_lists = []
-    ticket_company_lists = ticket_list.find_elements(:css, '.Act_flight_list')
-    ticket_company_lists&.each do |flight|
-      ticket_code  = flight.find_elements(:css, '.ticket-summary-row > span')[1].attribute("innerHTML")
-      ticket_price  = flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-price > label > b')[0].attribute("innerHTML")
-      ticket_seat  = flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-seat')[0].attribute("innerHTML")
-      ticket_changable_status  = flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-date')[0].attribute("innerHTML")
-      ticket_type  = flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-type-text .ticket-detail-type-text-ellipsis')[0].attribute("innerHTML")
+    ticket_flight_lists = []
+    ticket_airline_flights_lists = ticket_airline.find_elements(:css, '.Act_flight_list')
+    ticket_airline_flights_lists&.each do |ticket_flight|
       flight_data = {}
-      flight_data['flight_code'] = ticket_code
-      flight_data['flight_price'] = ticket_price
-      flight_lists.push(flight_data)
+      flight_data['flight_code'] = ticket_flight.find_elements(:css, '.ticket-summary-row > span')[1].attribute("innerHTML")
+      flight_data['flight_price'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-price > label > b')[0].attribute("innerHTML")
+      flight_data['flight_seat'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-seat')[0].attribute("innerHTML")
+      flight_data['flight_changable_status'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-date')[0].attribute("innerHTML")
+      flight_data['flight_type'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-type-text .ticket-detail-type-text-ellipsis')[0].attribute("innerHTML")
+      ticket_flight_lists.push(flight_data)
     end
-    temp_ticket_company_info[:flight_lists] = flight_lists
-    all_tickets_details_lists.push(temp_ticket_company_info)
+    temp_ticket_airline_info[:ticket_flight_lists] = ticket_flight_lists
+    all_tickets_details_lists.push(temp_ticket_airline_info)
   end
   return all_tickets_details_lists, total_ticket_found
 end
 
-ticket_search_date_from = Date.new(2021, 12, 31)
-ticket_search_date_to = Date.new(2022, 01, 31)
-ticket_search_date_from.upto(ticket_search_date_to) do |dt|
+TICKET_SEARCH_FROM_DATE.upto(TICKET_SEARCH_TO_DATE) do |dt|
   departure_date_in = dt.to_s.delete("-")
   departure_date_out = dt.to_s.delete("-")
 
   puts "\n\nTickets for this date " + dt.to_s
-  start_scraping(departure_date_in, departure_date_out)
-  check_return_tickets_visibility
 
-  tickets_out_list = scrap_ticket_details('out')
-  all_ticket_out_lists = tickets_out_list[0]
-  total_ticket_out_found = tickets_out_list[1]
+  begin
+    retries ||= 0
+    start_scraping(departure_date_in, departure_date_out)
+    # Wait for few seconds until able to find return tickets list
+    WAIT.until { WEB_DRIVER.find_element(css: "#Act_response_out .company-list").displayed? }
+    WAIT.until { WEB_DRIVER.find_element(css: "#Act_response_in .company-list").displayed? }
+    tickets_out_lists = searching_ticket_type('out')
+    tickets_in_lists = searching_ticket_type('in')
+  rescue Exception
+    puts "retris in check visibility=====" + retries.to_s
+    retries += 1
+    retry if (retries <= MAX_CALL)
+    raise "Could not get ticket website information: Please give necessary information to search"
+  end
 
-  tickets_in_list = scrap_ticket_details('in')
-  all_ticket_in_details = tickets_in_list[0]
-  total_ticket_in_found = tickets_in_list[1]
+  all_ticket_out_lists = tickets_out_lists[0]
+  total_ticket_out_found = tickets_out_lists[1]
+  all_ticket_in_details = tickets_in_lists[0]
+  total_ticket_in_found = tickets_in_lists[1]
 
   puts  "Total tickets found for out is = " + total_ticket_out_found.to_s
   puts  "Total tickets found for in is = " + total_ticket_in_found.to_s
