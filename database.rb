@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS tickets_airlines (
   airline_company_name VARCHAR(100),
   ticket_lowest_price FLOAT,
   total_flights_available INTEGER,
-  tickey_type VARCHAR(10),
+  ticket_type VARCHAR(10),
   FOREIGN KEY(ticket_summary_id) REFERENCES tickets_summary(id)
 );
 SQL
