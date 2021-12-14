@@ -1,7 +1,12 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    archive-zip (0.12.0)
+      io-like (~> 0.3.0)
     childprocess (4.1.0)
+    geckodriver-helper (0.0.5)
+      archive-zip (~> 0.7)
+    io-like (0.3.1)
     nokogiri (1.12.5-x86_64-linux)
       racc (~> 1.4)
     racc (1.6.0)
@@ -21,9 +26,11 @@ GEM
       selenium-webdriver (> 3.141, < 5.0)
 
 PLATFORMS
+  ruby
   x86_64-linux
 
 DEPENDENCIES
+  geckodriver-helper (~> 0.0.3)
   nokogiri (~> 1.11, >= 1.11.7)
   watir (~> 6.19, >= 6.19.1)
   webdrivers (~> 4.6)
