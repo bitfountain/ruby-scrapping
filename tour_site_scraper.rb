@@ -1,6 +1,9 @@
 require 'rubygems'
 require 'selenium-webdriver'
 require 'pry'
+require 'sqlite3'
+
+DB = SQLite3::Database.new( "db_tour_scraper.db" )
 
 MAX_RETRY = 40  # Maximum retry until the serarch page load in seconds
 MAX_CALL = 3  # Maximum recall air ticket site if any ajax error or busy page shown
@@ -8,6 +11,8 @@ MAX_CALL = 3  # Maximum recall air ticket site if any ajax error or busy page sh
 # Put Ticket Search input dates here
 TICKET_SEARCH_FROM_DATE = Date.new(2021, 12, 31)
 TICKET_SEARCH_TO_DATE = Date.new(2022, 01, 31)
+TIME_FROM_OUT = '0600'
+TIME_TO_OUT = '0700'
 
 WAIT = Selenium::WebDriver::Wait.new(timeout: 20) # Maximum wait to find out search results html
 WEB_DRIVER = Selenium::WebDriver.for :firefox
@@ -22,7 +27,7 @@ def start_scraping(departure_date_in, departure_date_out)
   # Generate the search url physically using any date, time and put here, we will make it dynamic later based on requirement
   WEB_DRIVER.navigate.to "https://www.tour.ne.jp/j_air/list/?adult=1&arr_in=TYO&arr_out=CTS&change_date_in=0&change_date_out=0&" +
   "date_in=#{departure_date_in}&date_out=#{departure_date_out}&dpt_in=" +
-  "CTS&dpt_out=TYO&time_from_out=0600&time_to_out=0700&time_type_out=0"
+  "CTS&dpt_out=TYO&time_from_out=#{TIME_FROM_OUT}&time_to_out=#{TIME_TO_OUT}&time_type_out=0"
   sleep(1)
   begin
     retries ||= 0
@@ -80,6 +85,36 @@ def searching_ticket_type(ticket_details_type)
   return all_tickets_details_lists, total_ticket_found
 end
 
+def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_date)
+  all_ticket_out_lists = tickets_out_lists[0]
+  all_ticket_in_lists = tickets_in_lists[0]
+  total_ticket_out_found = tickets_out_lists[1]
+  total_ticket_in_found = tickets_in_lists[1]
+  puts  "Total tickets found for out is = " + total_ticket_out_found.to_s
+  puts  "Total tickets found for in is = " + total_ticket_in_found.to_s
+
+  DB.execute("INSERT INTO tickets_summary values(?, ?, ?, ?, ?, ?, ?, ? )", [nil, departure_date.to_s, return_date.to_s, TIME_FROM_OUT, TIME_TO_OUT, Time.now.strftime("%Y-%m-%d %H:%M:%S"), total_ticket_out_found, total_ticket_in_found])
+  ticket_summary_id = DB.last_insert_row_id()
+  all_ticket_out_lists.each do |tickets_out|
+    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", [nil, DB.last_insert_row_id(), tickets_out[:ticket_company_name], tickets_out[:ticket_minimum_price], tickets_out[:number_of_ticket_found], 'round_trip'])
+    tickets_out[:ticket_flight_lists].each do |flight|
+      DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", [nil, DB.last_insert_row_id(), flight['flight_code'], flight['flight_price'], flight['flight_changable_status'], flight['flight_type']])
+    end
+  end
+
+  all_ticket_in_lists.each do |tickets_in|
+    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", [nil, ticket_summary_id, tickets_in[:ticket_company_name], tickets_in[:ticket_minimum_price], tickets_in[:number_of_ticket_found], 'round_trip'])
+    tickets_in[:ticket_flight_lists].each do |flight|
+      DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", [nil, DB.last_insert_row_id(), flight['flight_code'], flight['flight_price'], flight['flight_changable_status'], flight['flight_type']])
+    end
+  end
+
+  rows = DB.execute( "select * from tickets_summary" )
+
+  # binding.pry
+
+end
+
 TICKET_SEARCH_FROM_DATE.upto(TICKET_SEARCH_TO_DATE) do |dt|
   departure_date_in = dt.to_s.delete("-")
   departure_date_out = dt.to_s.delete("-")
@@ -100,11 +135,6 @@ TICKET_SEARCH_FROM_DATE.upto(TICKET_SEARCH_TO_DATE) do |dt|
     raise "Could not get ticket website information: Please give necessary information to search"
   end
 
-  all_ticket_out_lists = tickets_out_lists[0]
-  total_ticket_out_found = tickets_out_lists[1]
-  all_ticket_in_details = tickets_in_lists[0]
-  total_ticket_in_found = tickets_in_lists[1]
-
-  puts  "Total tickets found for out is = " + total_ticket_out_found.to_s
-  puts  "Total tickets found for in is = " + total_ticket_in_found.to_s
+  # Save scraped ticket details, initially departure date and return date is same
+  save_scrap_data(tickets_out_lists, tickets_in_lists, dt, dt)
 end
