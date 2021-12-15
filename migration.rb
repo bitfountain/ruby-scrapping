@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS airline_flights (
   ticket_airline_id INTEGER,
   flight_code VARCHAR(50),
   flight_price INTEGER,
-  flight_changable_status VARCHAR(50),
+  flight_changeable_status VARCHAR(50),
   flight_ticket_type VARCHAR(100),
   FOREIGN KEY(ticket_airline_id) REFERENCES tickets_airlines(id)
 );

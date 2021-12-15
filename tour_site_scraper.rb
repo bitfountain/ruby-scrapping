@@ -75,7 +75,7 @@ def searching_ticket_type(ticket_details_type)
       flight_data['flight_code'] = ticket_flight.find_elements(:css, '.ticket-summary-row > span')[1].attribute("innerHTML")
       flight_data['flight_price'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-price > label > b')[0].attribute("innerHTML")
       flight_data['flight_seat'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-seat')[0].attribute("innerHTML")
-      flight_data['flight_changable_status'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-date')[0].attribute("innerHTML")
+      flight_data['flight_changeable_status'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-date')[0].attribute("innerHTML")
       flight_data['flight_type'] = ticket_flight.find_elements(:css,
                                   '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-type-text .ticket-detail-type-text-ellipsis')[0].attribute("innerHTML")
       ticket_flight_lists.push(flight_data)
@@ -85,7 +85,6 @@ def searching_ticket_type(ticket_details_type)
   end
   return all_tickets_details_lists, total_ticket_found
 end
-
 
 # Save tickets scraped data to database SQLite into different tables
 def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_date)
@@ -130,7 +129,7 @@ def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_
         ticket_out_company_id,
         flight['flight_code'],
         flight['flight_price'],
-        flight['flight_changable_status'],
+        flight['flight_changeable_status'],
         flight['flight_type']
       ]
       DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", flight_data)
@@ -156,7 +155,7 @@ def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_
         ticket_in_company_id,
         flight['flight_code'],
         flight['flight_price'],
-        flight['flight_changable_status'],
+        flight['flight_changeable_status'],
         flight['flight_type']
       ]
       DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", flight_data)
