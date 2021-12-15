@@ -85,6 +85,8 @@ def searching_ticket_type(ticket_details_type)
   return all_tickets_details_lists, total_ticket_found
 end
 
+
+# Save tickets scraped data to database SQLite into different tables
 def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_date)
   all_ticket_out_lists = tickets_out_lists[0]
   all_ticket_in_lists = tickets_in_lists[0]
@@ -93,28 +95,73 @@ def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_
   puts  "Total tickets found for out is = " + total_ticket_out_found.to_s
   puts  "Total tickets found for in is = " + total_ticket_in_found.to_s
 
-  DB.execute("INSERT INTO tickets_summary values(?, ?, ?, ?, ?, ?, ?, ? )", [nil, departure_date.to_s, return_date.to_s, TIME_FROM_OUT, TIME_TO_OUT, Time.now.strftime("%Y-%m-%d %H:%M:%S"), total_ticket_out_found, total_ticket_in_found])
+  # Save ticket summary
+  ticket_summary_data = [
+    nil,
+    departure_date.to_s,
+    return_date.to_s,
+    TIME_FROM_OUT,
+    TIME_TO_OUT,
+    Time.now.strftime("%Y-%m-%d %H:%M:%S"),
+    total_ticket_out_found, total_ticket_in_found
+  ]
+  DB.execute("INSERT INTO tickets_summary values(?, ?, ?, ?, ?, ?, ?, ? )", )
   ticket_summary_id = DB.last_insert_row_id()
+
+  # Save all available out/departure tickets comapny and comapnies flights data
   all_ticket_out_lists.each do |tickets_out|
-    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", [nil, ticket_summary_id, tickets_out[:ticket_company_name], tickets_out[:ticket_minimum_price], tickets_out[:number_of_ticket_found], 'out'])
+    # Save company tickets informations
+    company_data = [
+      nil,
+      ticket_summary_id,
+      tickets_out[:ticket_company_name],
+      tickets_out[:ticket_minimum_price],
+      tickets_out[:number_of_ticket_found],
+      'out'
+    ]
+    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", )
+
+    # Save ticket flights information
     ticket_out_company_id = DB.last_insert_row_id()
     tickets_out[:ticket_flight_lists].each do |flight|
-      DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", [nil, ticket_out_company_id, flight['flight_code'], flight['flight_price'], flight['flight_changable_status'], flight['flight_type']])
+      flight_data = [
+        nil,
+        ticket_out_company_id,
+        flight['flight_code'],
+        flight['flight_price'],
+        flight['flight_changable_status'],
+        flight['flight_type']
+      ]
+      DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", flight_data)
     end
   end
 
+  # Save all available in/return tickets comapny and comapnies flights data
   all_ticket_in_lists.each do |tickets_in|
-    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", [nil, ticket_summary_id, tickets_in[:ticket_company_name], tickets_in[:ticket_minimum_price], tickets_in[:number_of_ticket_found], 'in'])
+    # Save company tickets informations
+    ticket_in_company_data = [
+      nil,
+      ticket_summary_id,
+      tickets_in[:ticket_company_name],
+      tickets_in[:ticket_minimum_price],
+      tickets_in[:number_of_ticket_found],
+      'in'
+    ]
+    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", ticket_in_company_data)
     ticket_in_company_id = DB.last_insert_row_id()
     tickets_in[:ticket_flight_lists].each do |flight|
-      DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", [nil, ticket_in_company_id, flight['flight_code'], flight['flight_price'], flight['flight_changable_status'], flight['flight_type']])
+      flight_data = [
+        nil,
+        ticket_in_company_id,
+        flight['flight_code'],
+        flight['flight_price'],
+        flight['flight_changable_status'],
+        flight['flight_type']
+      ]
+      DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", flight_data)
     end
   end
-
   rows = DB.execute( "select * from tickets_summary" )
-
-  # binding.pry
-
 end
 
 TICKET_SEARCH_FROM_DATE.upto(TICKET_SEARCH_TO_DATE) do |dt|
