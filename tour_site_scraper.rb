@@ -3,7 +3,7 @@ require 'selenium-webdriver'
 require 'pry'
 require 'sqlite3'
 
-DB = SQLite3::Database.new( "db_tour_scraper.db" )
+DB = SQLite3::Database.new("db_tour_scraper.db")
 
 MAX_RETRY = 40  # Maximum retry until the serarch page load in seconds
 MAX_CALL = 3  # Maximum recall air ticket site if any ajax error or busy page shown
@@ -76,7 +76,8 @@ def searching_ticket_type(ticket_details_type)
       flight_data['flight_price'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-price > label > b')[0].attribute("innerHTML")
       flight_data['flight_seat'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-seat')[0].attribute("innerHTML")
       flight_data['flight_changable_status'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-icon .icon-date')[0].attribute("innerHTML")
-      flight_data['flight_type'] = ticket_flight.find_elements(:css, '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-type-text .ticket-detail-type-text-ellipsis')[0].attribute("innerHTML")
+      flight_data['flight_type'] = ticket_flight.find_elements(:css,
+                                  '.ticket-detail-item .ticket-detail-item-inner .ticket-detail-type .ticket-detail-type-text .ticket-detail-type-text-ellipsis')[0].attribute("innerHTML")
       ticket_flight_lists.push(flight_data)
     end
     temp_ticket_airline_info[:ticket_flight_lists] = ticket_flight_lists
@@ -105,7 +106,7 @@ def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_
     Time.now.strftime("%Y-%m-%d %H:%M:%S"),
     total_ticket_out_found, total_ticket_in_found
   ]
-  DB.execute("INSERT INTO tickets_summary values(?, ?, ?, ?, ?, ?, ?, ? )", )
+  DB.execute("INSERT INTO tickets_summary values(?, ?, ?, ?, ?, ?, ?, ? )", ticket_summary_data)
   ticket_summary_id = DB.last_insert_row_id()
 
   # Save all available out/departure tickets comapny and comapnies flights data
@@ -119,7 +120,7 @@ def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_
       tickets_out[:number_of_ticket_found],
       'out'
     ]
-    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", )
+    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", company_data)
 
     # Save ticket flights information
     ticket_out_company_id = DB.last_insert_row_id()

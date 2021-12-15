@@ -38,4 +38,3 @@ CREATE TABLE IF NOT EXISTS airline_flights (
   FOREIGN KEY(ticket_airline_id) REFERENCES tickets_airlines(id)
 );
 SQL
-    
