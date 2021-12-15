@@ -2,6 +2,8 @@ require 'sqlite3'
     
 db = SQLite3::Database.open "db_tour_scraper.db"
 
+puts "Migration started ...."
+
 db.execute <<SQL
 CREATE TABLE IF NOT EXISTS tickets_summary (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,6 +16,7 @@ CREATE TABLE IF NOT EXISTS tickets_summary (
   total_tickets_in INTEGER
 );
 SQL
+puts "Table tickets_summary created"
 
 db.execute <<SQL
 CREATE TABLE IF NOT EXISTS tickets_airline_companies (
@@ -26,6 +29,7 @@ CREATE TABLE IF NOT EXISTS tickets_airline_companies (
   FOREIGN KEY(ticket_summary_id) REFERENCES tickets_summary(id)
 );
 SQL
+puts "Table tickets_airline_companies created"
 
 db.execute <<SQL
 CREATE TABLE IF NOT EXISTS airline_flights (
@@ -38,3 +42,5 @@ CREATE TABLE IF NOT EXISTS airline_flights (
   FOREIGN KEY(ticket_airline_id) REFERENCES tickets_airlines(id)
 );
 SQL
+puts "Table airline_flights created"
+puts "Migration ended."
