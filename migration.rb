@@ -44,4 +44,5 @@ CREATE TABLE IF NOT EXISTS airline_flights (
 SQL
 
 puts "Table airline_flights created"
+
 puts "Migration ended."
