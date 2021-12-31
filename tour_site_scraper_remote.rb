@@ -46,6 +46,7 @@ def start_scraping(departure_date_in, departure_date_out)
     ticket_summary_button_out = nil
     ticket_summary_button_out = WEB_DRIVER.find_element(:css, '#Act_Airline_Out')
     ticket_summary_button_in = WEB_DRIVER.find_element(:css, '#Act_Airline_In')
+    binding.pry
     return if ticket_summary_button_out.nil? && ticket_summary_button_in.nil?
     ticket_summary_button_out.click
     ticket_summary_button_in.click
@@ -82,6 +83,7 @@ def searching_ticket_type(ticket_details_type)
 
     ticket_flight_lists = []
     ticket_airline_flights_lists = ticket_airline.find_elements(:css, '.Act_flight_list')
+    binding.pry
     ticket_airline_flights_lists&.each do |ticket_flight|
       flight_data = {}
       flight_data['flight_code'] = ticket_flight.find_elements(:css, '.ticket-summary-row > span')[1].attribute("innerHTML")
@@ -99,82 +101,82 @@ def searching_ticket_type(ticket_details_type)
 end
 
 # Save tickets scraped data to database SQLite into different tables
-def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_date)
-  all_ticket_out_lists = tickets_out_lists[0]
-  all_ticket_in_lists = tickets_in_lists[0]
-  total_ticket_out_found = tickets_out_lists[1]
-  total_ticket_in_found = tickets_in_lists[1]
-  puts  "Total tickets found for out is = " + total_ticket_out_found.to_s
-  puts  "Total tickets found for in is = " + total_ticket_in_found.to_s
+# def save_scrap_data(tickets_out_lists, tickets_in_lists, departure_date, return_date)
+#   all_ticket_out_lists = tickets_out_lists[0]
+#   all_ticket_in_lists = tickets_in_lists[0]
+#   total_ticket_out_found = tickets_out_lists[1]
+#   total_ticket_in_found = tickets_in_lists[1]
+#   puts  "Total tickets found for out is = " + total_ticket_out_found.to_s
+#   puts  "Total tickets found for in is = " + total_ticket_in_found.to_s
 
-  # Save ticket summary
-  ticket_summary_data = [
-    nil,
-    departure_date.to_s,
-    return_date.to_s,
-    TIME_FROM_OUT,
-    TIME_TO_OUT,
-    Time.now.strftime("%Y-%m-%d %H:%M:%S"),
-    total_ticket_out_found, total_ticket_in_found
-  ]
-  DB.execute("INSERT INTO tickets_summary values(?, ?, ?, ?, ?, ?, ?, ? )", ticket_summary_data)
-  ticket_summary_id = DB.last_insert_row_id()
+#   # Save ticket summary
+#   ticket_summary_data = [
+#     nil,
+#     departure_date.to_s,
+#     return_date.to_s,
+#     TIME_FROM_OUT,
+#     TIME_TO_OUT,
+#     Time.now.strftime("%Y-%m-%d %H:%M:%S"),
+#     total_ticket_out_found, total_ticket_in_found
+#   ]
+#   DB.execute("INSERT INTO tickets_summary values(?, ?, ?, ?, ?, ?, ?, ? )", ticket_summary_data)
+#   ticket_summary_id = DB.last_insert_row_id()
 
-  # Save all available out/departure tickets comapny and comapnies flights data
-  all_ticket_out_lists.each do |tickets_out|
-    # Save company tickets informations
-    company_data = [
-      nil,
-      ticket_summary_id,
-      tickets_out[:ticket_company_name],
-      tickets_out[:ticket_minimum_price],
-      tickets_out[:number_of_ticket_found],
-      'out'
-    ]
-    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", company_data)
+#   # Save all available out/departure tickets comapny and comapnies flights data
+#   all_ticket_out_lists.each do |tickets_out|
+#     # Save company tickets informations
+#     company_data = [
+#       nil,
+#       ticket_summary_id,
+#       tickets_out[:ticket_company_name],
+#       tickets_out[:ticket_minimum_price],
+#       tickets_out[:number_of_ticket_found],
+#       'out'
+#     ]
+#     DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", company_data)
 
-    # Save ticket flights information
-    ticket_out_company_id = DB.last_insert_row_id()
-    tickets_out[:ticket_flight_lists].each do |flight|
-      flight_data = [
-        nil,
-        ticket_out_company_id,
-        flight['flight_code'],
-        flight['flight_price'],
-        flight['flight_changeable_status'],
-        flight['flight_type']
-      ]
-      DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", flight_data)
-    end
-  end
+#     # Save ticket flights information
+#     ticket_out_company_id = DB.last_insert_row_id()
+#     tickets_out[:ticket_flight_lists].each do |flight|
+#       flight_data = [
+#         nil,
+#         ticket_out_company_id,
+#         flight['flight_code'],
+#         flight['flight_price'],
+#         flight['flight_changeable_status'],
+#         flight['flight_type']
+#       ]
+#       DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", flight_data)
+#     end
+#   end
 
-  # Save all available in/return tickets comapny and comapnies flights data
-  all_ticket_in_lists.each do |tickets_in|
-    # Save company tickets informations
-    ticket_in_company_data = [
-      nil,
-      ticket_summary_id,
-      tickets_in[:ticket_company_name],
-      tickets_in[:ticket_minimum_price],
-      tickets_in[:number_of_ticket_found],
-      'in'
-    ]
-    DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", ticket_in_company_data)
-    ticket_in_company_id = DB.last_insert_row_id()
-    tickets_in[:ticket_flight_lists].each do |flight|
-      flight_data = [
-        nil,
-        ticket_in_company_id,
-        flight['flight_code'],
-        flight['flight_price'],
-        flight['flight_changeable_status'],
-        flight['flight_type']
-      ]
-      DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", flight_data)
-    end
-  end
-  rows = DB.execute( "select * from tickets_summary" )
-end
+#   # Save all available in/return tickets comapny and comapnies flights data
+#   all_ticket_in_lists.each do |tickets_in|
+#     # Save company tickets informations
+#     ticket_in_company_data = [
+#       nil,
+#       ticket_summary_id,
+#       tickets_in[:ticket_company_name],
+#       tickets_in[:ticket_minimum_price],
+#       tickets_in[:number_of_ticket_found],
+#       'in'
+#     ]
+#     DB.execute("INSERT INTO tickets_airline_companies values(?, ?, ?, ?, ?, ?)", ticket_in_company_data)
+#     ticket_in_company_id = DB.last_insert_row_id()
+#     tickets_in[:ticket_flight_lists].each do |flight|
+#       flight_data = [
+#         nil,
+#         ticket_in_company_id,
+#         flight['flight_code'],
+#         flight['flight_price'],
+#         flight['flight_changeable_status'],
+#         flight['flight_type']
+#       ]
+#       DB.execute("INSERT INTO airline_flights values(?, ?, ?, ?, ?, ?)", flight_data)
+#     end
+#   end
+#   rows = DB.execute( "select * from tickets_summary" )
+# end
 
 TICKET_SEARCH_FROM_DATE.upto(TICKET_SEARCH_TO_DATE) do |dt|
   departure_date_in = dt.to_s.delete("-")
@@ -190,6 +192,7 @@ TICKET_SEARCH_FROM_DATE.upto(TICKET_SEARCH_TO_DATE) do |dt|
     WAIT.until { WEB_DRIVER.find_element(css: "#Act_response_in .company-list").displayed? }
     tickets_out_lists = searching_ticket_type('out')
     tickets_in_lists = searching_ticket_type('in')
+    binding.pry
   rescue Exception
     retries += 1
     retry if (retries <= MAX_CALL)
@@ -197,5 +200,5 @@ TICKET_SEARCH_FROM_DATE.upto(TICKET_SEARCH_TO_DATE) do |dt|
   end
 
   # Save scraped ticket details, initially departure date and return date is same
-  save_scrap_data(tickets_out_lists, tickets_in_lists, dt, dt)
+ # save_scrap_data(tickets_out_lists, tickets_in_lists, dt, dt)
 end
